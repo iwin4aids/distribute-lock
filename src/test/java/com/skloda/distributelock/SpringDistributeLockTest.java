@@ -10,6 +10,7 @@ import org.springframework.integration.redis.util.RedisLockRegistry;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.io.IOException;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -27,10 +28,11 @@ public class SpringDistributeLockTest {
 
     @Test
     public void testSpringRedisLock() {
+        CountDownLatch latch = new CountDownLatch(POOL_SIZE);
         ExecutorService executorService = Executors.newFixedThreadPool(POOL_SIZE);
         for (int i = 0; i < POOL_SIZE; i++) {
             executorService.submit(() -> {
-                // 获取锁对象（没有真正获取到锁)
+                // 获取锁对象（此时没有真正获取到锁)
                 Lock lock = redisLockRegistry.obtain("skloda");
                 while (true) {
                     try {
@@ -50,6 +52,7 @@ public class SpringDistributeLockTest {
                 try {
                     // 模拟业务执行
                     TimeUnit.SECONDS.sleep(2);
+                    latch.countDown();
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 } finally {
@@ -59,14 +62,15 @@ public class SpringDistributeLockTest {
 
             });
 
+            try {
+                latch.await();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            log.info("全部任务执行完毕!!!");
+
         }
 
-        // block main thread
-        try {
-            System.in.read();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
 
     }
 

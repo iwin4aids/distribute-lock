@@ -30,15 +30,13 @@ public class MyDistributeLockTest {
         ExecutorService executorService = Executors.newFixedThreadPool(POOL_SIZE);
         for (int i = 0; i < POOL_SIZE; i++) {
             executorService.submit(() -> {
-                // 获取锁对象（没有真正获取到锁)
                 while (true) {
-                    // 以当前线程为名称作为请求id，会写入LOCK_KEY对应的value中，为了“解铃还须系铃人“
+                    // 获取分布式锁，以当前线程为名称作为请求id写入redis
                     boolean canDo = redisLock.lock(LOCK_KEY, Thread.currentThread().getName(), 60, TimeUnit.SECONDS);
                     if (canDo) {
                         log.info(Thread.currentThread().getName() + " => 获取到锁,准备执行业务...");
                         break;
                     }
-
                     // 实际业务这里可以让当前线程等待避免cpu使用过高
                     try {
                         TimeUnit.SECONDS.sleep(2);
@@ -46,7 +44,6 @@ public class MyDistributeLockTest {
                         e.printStackTrace();
                     }
                 }
-
                 try {
                     // 模拟业务执行时间
                     Thread.sleep(2000);
@@ -55,14 +52,12 @@ public class MyDistributeLockTest {
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 } finally {
-                    // 释放锁
-                    // 即当前线程加的锁必须由当前线程释放，或者自动超时
+                    // 释放锁，当前线程加的锁必须由当前线程释放，或者自动超时
                     redisLock.unlock(LOCK_KEY, Thread.currentThread().getName());
                 }
             });
 
         }
-
         try {
             latch.await();
         } catch (InterruptedException e) {
