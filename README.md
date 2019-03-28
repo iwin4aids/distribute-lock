@@ -13,10 +13,11 @@
 
 > redis由于其高性能，单线程模型以及操作原子性特性，非常适合作为分布式锁的中间件，注意的几个点：
 
-* 1、redis的setnx()方法作用就是SET IF NOT EXIST，expire()方法就是给锁加一个过期时间。乍一看好像和前面的set()方法结果一样，然而由于这是两条Redis命令，不具有原子性，如果程序在执行完setnx()之后突然崩溃，导致锁没有设置过期时间。那么将会发生死锁。网上之所以有人这样实现，是因为低版本的jedis并不支持多参数的set()方法。
-* 2、考虑操作的原子性，使用script lua脚本代替多部方法的调用考虑广大同学习惯使用spring-boot-starter-data-redis，故基于此进行封装。
+- 1、redis的setnx()方法作用就是SET IF NOT EXIST，expire()方法就是给锁加一个过期时间。乍一看好像和前面的set()方法结果一样，然而由于这是两条Redis命令，不具有原子性，如果程序在执行完setnx()之后突然崩溃，导致锁没有设置过期时间。那么将会发生死锁。网上之所以有人这样实现，是因为低版本的jedis并不支持多参数的set()方法。
 
+- 2、考虑操作的原子性，使用script lua脚本代替多部方法的调用考虑广大同学习惯使用spring-boot-starter-data-redis，故基于此进行封装。
 
-> btw:
-> 1、由于jedis已经很久没有更新了（2016.7月起），spring boot 2.x版本已经放弃使用jedis作为底层redis客户端实现
+## btw:
+> 1、由于jedis已经很久没有更新了（2016.7月起），spring boot 2.x版本已经放弃使用jedis作为底层redis客户端实现.
+
 > 2、基于spring-data-redis的良好封装，使用RedisConnection作为门面类实现，不用关心底层是jedis还是lettuce。
